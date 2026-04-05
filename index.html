@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROC Curve Builder: Easily Create and Customize ROC Curves</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root {
+  --bg: #f5f3ef;
+  --bg2: #eceae4;
+  --surface: #ffffff;
+  --surface2: #f8f7f4;
+  --border: #ddd9d0;
+  --border2: #c8c2b6;
+  --text: #1a1714;
+  --text2: #4a4540;
+  --text3: #7a746c;
+  --accent: #c0392b;
+  --accent2: #e74c3c;
+  --accent-light: #fdf2f0;
+  --teal: #16a085;
+  --teal-light: #edfaf7;
+  --gold: #d4ac0d;
+  --gold-light: #fefce8;
+  --navy: #1a3a5c;
+  --navy-light: #eef3f9;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 10px 40px rgba(0,0,0,0.10);
+  --radius: 12px;
+  --radius-lg: 20px;
+  --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+[data-theme="dark"] {
+  --bg: #0f0e0d;
+  --bg2: #1a1916;
+  --surface: #211f1c;
+  --surface2: #2a2824;
+  --border: #3a3830;
+  --border2: #4a4840;
+  --text: #f0ece4;
+  --text2: #b8b0a4;
+  --text3: #7a746c;
+  --accent: #e74c3c;
+  --accent2: #ff6b6b;
+  --accent-light: #2a1614;
+  --teal: #1abc9c;
+  --teal-light: #0f2420;
+  --gold: #f1c40f;
+  --gold-light: #1e1a08;
+  --navy: #3498db;
+  --navy-light: #0f1e2d;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.4), 0 10px 40px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  transition: background var(--transition), color var(--transition);
+}
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.logo { display: flex; align-items: center; gap: 14px; }
+.logo-icon {
+  width: 42px; height: 42px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.logo-text h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--text);
+}
+.logo-text span { font-size: 11px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+
+.dev-badge {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  text-decoration: none;
+  transition: all var(--transition);
+}
+.dev-badge:hover { background: var(--navy-light); border-color: var(--navy); }
+.dev-badge-avatar {
+  width: 24px; height: 24px;
+  background: linear-gradient(135deg, var(--accent), var(--navy));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: white; font-weight: 700;
+}
+.dev-badge span { font-size: 12px; font-weight: 500; color: var(--text2); }
+
+.theme-toggle {
+  width: 42px; height: 42px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: all var(--transition);
+}
+.theme-toggle:hover { background: var(--surface); border-color: var(--border2); }
+
+main { max-width: 1400px; margin: 0 auto; padding: 40px 32px; }
+
+.hero { text-align: center; margin-bottom: 48px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent-light);
+  border: 1px solid rgba(192,57,43,0.2);
+  color: var(--accent);
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 5px 14px; border-radius: 100px; margin-bottom: 18px;
+}
+.hero h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.15; margin-bottom: 14px; color: var(--text);
+}
+.hero p { font-size: 16px; color: var(--text3); max-width: 520px; margin: 0 auto; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  transition: background var(--transition), border-color var(--transition);
+}
+.card-title {
+  font-size: 13px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text3); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::before {
+  content: ''; width: 3px; height: 14px;
+  background: var(--accent); border-radius: 2px;
+}
+
+.data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+textarea {
+  width: 100%; min-height: 160px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  color: var(--text);
+  resize: vertical; outline: none;
+  transition: border-color var(--transition), background var(--transition);
+  line-height: 1.7;
+}
+textarea:focus { border-color: var(--accent); background: var(--surface); }
+textarea::placeholder { color: var(--text3); font-size: 12px; }
+
+.levels-section {
+  margin-top: 16px; padding: 16px;
+  background: var(--gold-light);
+  border: 1px solid rgba(212,172,13,0.25);
+  border-radius: var(--radius);
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+.levels-title { font-size: 12px; font-weight: 600; color: var(--gold); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.levels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.level-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+}
+.level-name { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); }
+.level-assign { display: flex; gap: 6px; }
+.level-btn {
+  width: 32px; height: 32px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  border-radius: 6px; cursor: pointer;
+  font-size: 13px; font-weight: 700;
+  transition: all var(--transition); color: var(--text2);
+}
+.level-btn.active-1 { background: var(--teal); border-color: var(--teal); color: white; }
+.level-btn.active-0 { background: var(--accent); border-color: var(--accent); color: white; }
+.level-btn:hover:not(.active-1):not(.active-0) { border-color: var(--border2); background: var(--surface); }
+
+.indep-vars-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.indep-var-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.indep-var-name { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text); }
+.indep-var-meta { color: var(--text3); font-size: 11px; }
+.var-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.var-chip.numeric { background: var(--navy-light); color: var(--navy); border: 1px solid rgba(26,58,92,0.2); }
+.var-chip.categorical { background: var(--teal-light); color: var(--teal); border: 1px solid rgba(22,160,133,0.2); }
+[data-theme="dark"] .var-chip.numeric { border-color: rgba(52,152,219,0.3); }
+[data-theme="dark"] .var-chip.categorical { border-color: rgba(26,188,156,0.3); }
+
+.predictor-select {
+  margin-top: 14px; padding: 14px;
+  background: var(--navy-light);
+  border: 1px solid rgba(26,58,92,0.15);
+  border-radius: var(--radius);
+}
+[data-theme="dark"] .predictor-select { border-color: rgba(52,152,219,0.2); }
+.predictor-select label { font-size: 12px; font-weight: 600; color: var(--navy); display: block; margin-bottom: 8px; }
+.predictor-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pred-chip {
+  padding: 5px 12px; border-radius: 100px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all var(--transition); color: var(--text2);
+}
+.pred-chip.selected { background: var(--navy); border-color: var(--navy); color: white; }
+[data-theme="dark"] .pred-chip.selected { background: var(--navy); }
+.pred-chip:hover:not(.selected) { border-color: var(--navy); color: var(--navy); }
+
+.run-section { text-align: center; margin: 32px 0; }
+.btn-run {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 16px 40px;
+  background: var(--accent); color: white;
+  border: none; border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(192,57,43,0.35);
+  transition: all var(--transition); letter-spacing: 0.02em;
+}
+.btn-run:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(192,57,43,0.4); }
+.btn-run:active { transform: translateY(0); }
+.btn-run:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-run .spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  animation: spin 0.8s linear infinite; display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn-run.loading .spinner { display: block; }
+.btn-run.loading .btn-icon { display: none; }
+
+.error-msg {
+  background: var(--accent-light);
+  border: 1px solid rgba(192,57,43,0.3);
+  border-radius: var(--radius);
+  padding: 12px 16px; color: var(--accent);
+  font-size: 13px; margin: 12px 0; display: none;
+}
+
+#results-section { display: none; animation: fadeUp 0.5s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.results-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+.results-header h3 { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--text); }
+.export-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-export {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all var(--transition); border: 1.5px solid;
+}
+.btn-export.word { background: var(--navy-light); border-color: rgba(26,58,92,0.25); color: var(--navy); }
+.btn-export.word:hover { background: var(--navy); color: white; }
+.btn-export.png { background: var(--teal-light); border-color: rgba(22,160,133,0.25); color: var(--teal); }
+.btn-export.png:hover { background: var(--teal); color: white; }
+.btn-export.svg { background: var(--gold-light); border-color: rgba(212,172,13,0.25); color: var(--gold); }
+.btn-export.svg:hover { background: var(--gold); color: white; }
+[data-theme="dark"] .btn-export.word { border-color: rgba(52,152,219,0.3); }
+
+.results-grid-1 { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+}
+.stat-card.red::before { background: var(--accent); }
+.stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
+.stat-value { font-family: 'DM Serif Display', serif; font-size: 36px; color: var(--text); line-height: 1; }
+.stat-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.stat-icon { position: absolute; top: 16px; right: 16px; font-size: 22px; opacity: 0.4; }
+
+.customizer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.ctrl-group { display: flex; flex-direction: column; gap: 5px; }
+.ctrl-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); }
+.ctrl-input {
+  padding: 7px 12px; border: 1.5px solid var(--border);
+  border-radius: 8px; background: var(--surface2);
+  color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; outline: none; transition: border-color var(--transition);
+}
+.ctrl-input:focus { border-color: var(--accent); }
+.ctrl-input[type="color"] { height: 38px; padding: 3px 6px; cursor: pointer; }
+.ctrl-input[type="range"] { padding: 0; height: 6px; accent-color: var(--accent); cursor: pointer; margin-top: 8px; }
+.ctrl-input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+.ctrl-row { display: flex; align-items: center; gap: 8px; }
+
+.chart-wrap { position: relative; background: var(--surface); border-radius: var(--radius); padding: 20px; }
+#rocChart { width: 100% !important; }
+
+.auc-interp {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 100px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.auc-outstanding { background: rgba(26,188,156,0.2); color: var(--teal); }
+.auc-excellent { background: rgba(26,58,92,0.15); color: var(--navy); }
+.auc-acceptable { background: rgba(212,172,13,0.15); color: var(--gold); }
+.auc-poor { background: rgba(192,57,43,0.15); color: var(--accent); }
+
+.section-divider { display: flex; align-items: center; gap: 14px; margin: 32px 0 20px; }
+.section-divider h4 { font-family: 'DM Serif Display', serif; font-size: 18px; white-space: nowrap; }
+.section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+footer { border-top: 1px solid var(--border); padding: 24px 40px; text-align: center; background: var(--surface); margin-top: 60px; }
+.footer-dev {
+  display: inline-flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--text3); font-size: 13px; transition: color var(--transition);
+}
+.footer-dev:hover { color: var(--accent); }
+.footer-dev strong { color: var(--text2); }
+.footer-heart { color: var(--accent); }
+
+@media (max-width: 768px) {
+  header { padding: 0 20px; }
+  main { padding: 24px 16px; }
+  .data-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .dev-badge span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📈</div>
+    <div class="logo-text">
+      <h1>ROC Curve Builder</h1>
+      <span>Easily Create and Customize ROC Curves</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <a class="dev-badge" href="https://github.com/mudassiribrahim12/ROCCurve-Builder" target="_blank" rel="noopener">
+      <div class="dev-badge-avatar">&lt;/&gt;</div>
+      <span>Source Code</span>
+      <span style="opacity:0.5">·</span>
+      <span style="opacity:0.6">🔗 GitHub</span>
+    </a>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-badge">🔬 Create · Customize · Download </div>
+    <h2>Receiver Operating Characteristic<br>Analysis</h2>
+    <p>Create and customize beautiful ROC curves tailored for your research, publications, and reporting quickly and effortlessly.
+</p>
+  </div>
+
+  <div class="data-grid">
+    <!-- DEPENDENT VAR -->
+    <div class="card">
+      <div class="card-title">Dependent Variable (Outcome)</div>
+      <textarea id="depVarInput" placeholder="Paste your dependent variable here.&#10;Include the header row as the first line.&#10;&#10;Example:&#10;Outcome&#10;Yes&#10;No&#10;Yes&#10;Yes&#10;No&#10;...&#10;&#10;Supports up to 1,000,000 observations."></textarea>
+      <div id="depVarInfo" style="font-size:12px; color:var(--text3); margin-top:8px;"></div>
+      <div id="levelsSection" class="levels-section" style="display:none;">
+        <div class="levels-title">⚙ Assign Binary Labels to Levels</div>
+        <p style="font-size:11px; color:var(--text3); margin-bottom:10px;">Assign "1" (Event/Positive) and "0" (Non-Event/Negative) to each level detected in your variable.</p>
+        <div id="levelsGrid" class="levels-grid"></div>
+      </div>
+    </div>
+
+    <!-- INDEPENDENT VARS -->
+    <div class="card">
+      <div class="card-title">Independent Variables (Predictors)</div>
+      <textarea id="indepVarInput" placeholder="Paste your independent variables here.&#10;Include all column headers in the first row.&#10;&#10;Example (tab-separated from Excel):&#10;Age  Sex   BMI   Glucose&#10;45   Male  28.3  102&#10;&#10;Tip: Select all columns in Excel → Copy → Paste here."></textarea>
+      <div id="indepVarInfo" style="font-size:12px; color:var(--text3); margin-top:8px;"></div>
+      <div id="indepVarsList" class="indep-vars-list"></div>
+      <div id="predictorSelect" class="predictor-select" style="display:none; margin-top:14px;">
+        <label>Select predictor(s) to include in ROC analysis:</label>
+        <div id="predictorChips" class="predictor-chips"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="globalError" class="error-msg"></div>
+
+  <div class="run-section">
+    <button class="btn-run" id="runBtn" onclick="runAnalysis()">
+      <span class="btn-icon">⚡</span>
+      <div class="spinner"></div>
+      Run ROC Analysis
+    </button>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div id="results-section">
+    <div class="results-header">
+      <h3>📊 Analysis Results</h3>
+      <div class="export-btns">
+        <button class="btn-export word" onclick="exportWord()">📄 Export Word</button>
+        <button class="btn-export png" onclick="exportPNG()">🖼 Export PNG</button>
+        <button class="btn-export svg" onclick="exportSVG()">✦ Export SVG</button>
+      </div>
+    </div>
+
+    <!-- ONLY AUC STAT CARD -->
+    <div class="results-grid-1" id="topStats"></div>
+
+    <div class="section-divider"><h4>ROC Curve</h4></div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-title">Graph Customization</div>
+      <div class="customizer-grid">
+        <div class="ctrl-group">
+          <label class="ctrl-label">Curve Color</label>
+          <input type="color" class="ctrl-input" id="curveColor" value="#c0392b" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Reference Line Color</label>
+          <input type="color" class="ctrl-input" id="refColor" value="#7a746c" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Optimal Point Color</label>
+          <input type="color" class="ctrl-input" id="optColor" value="#1abc9c" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Fill Color</label>
+          <input type="color" class="ctrl-input" id="fillColor" value="#e74c3c" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Chart Title</label>
+          <input type="text" class="ctrl-input" id="chartTitle" value="ROC Curve" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">X-Axis Label</label>
+          <input type="text" class="ctrl-input" id="xLabel" value="1 - Specificity (False Positive Rate)" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Y-Axis Label</label>
+          <input type="text" class="ctrl-input" id="yLabel" value="Sensitivity (True Positive Rate)" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Title Font Size</label>
+          <input type="range" class="ctrl-input" id="titleSize" min="12" max="32" value="18" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Axis Label Size</label>
+          <input type="range" class="ctrl-input" id="axisSize" min="10" max="24" value="13" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Line Thickness</label>
+          <input type="range" class="ctrl-input" id="lineWidth" min="1" max="6" value="2.5" step="0.5" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Curve Smoothing</label>
+          <input type="range" class="ctrl-input" id="curveTension" min="0" max="0.4" value="0.1" step="0.05" oninput="updateChart()">
+        </div>
+        <div class="ctrl-group">
+          <label class="ctrl-label">Options</label>
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+            <div class="ctrl-row"><input type="checkbox" class="ctrl-input" id="showFill" checked oninput="updateChart()"> <label style="font-size:12px;">Fill under curve</label></div>
+            <div class="ctrl-row"><input type="checkbox" class="ctrl-input" id="showAUCLabel" oninput="updateChart()"> <label style="font-size:12px;">Show AUC in graph</label></div>
+            <div class="ctrl-row"><input type="checkbox" class="ctrl-input" id="showAUCInterp" oninput="updateChart()"> <label style="font-size:12px;">Show AUC interpretation in graph</label></div>
+            <div class="ctrl-row"><input type="checkbox" class="ctrl-input" id="showOptPoint" checked oninput="updateChart()"> <label style="font-size:12px;">Show optimal point</label></div>
+            <div class="ctrl-row"><input type="checkbox" class="ctrl-input" id="showGrid" checked oninput="updateChart()"> <label style="font-size:12px;">Show grid lines</label></div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="rocChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <a class="footer-dev" href="https://mudasiribrahim.vercel.app/" target="_blank" rel="noopener">
+    <span class="footer-heart">♥</span>
+    Created by <strong>Mudasir Mohammed Ibrahim</strong> &nbsp;·&nbsp;
+    <span>🔗 Personal website</span> &nbsp;·&nbsp;
+    <span>🐦 @Mudassiribrahim30@gmail.com</span> &nbsp;·&nbsp;
+    <span style="opacity:0.5; font-size:11px;">ROC Curve Builder</span>
+  </a>
+</footer>
+
+<script>
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let state = {
+  depHeader: '',
+  depValues: [],
+  depLevels: [],
+  levelAssignment: {},
+  indepHeaders: [],
+  indepData: {},
+  varTypes: {},
+  selectedPredictors: [],
+  results: null
+};
+let rocChart = null;
+
+// ═══════════════════════════════════
+// THEME
+// ═══════════════════════════════════
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.onclick = () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+  themeBtn.textContent = dark ? '🌙' : '☀️';
+  if (state.results) updateChart();
+};
+
+// ═══════════════════════════════════
+// DEPENDENT VARIABLE
+// ═══════════════════════════════════
+document.getElementById('depVarInput').addEventListener('input', parseDepVar);
+
+function parseDepVar() {
+  const raw = document.getElementById('depVarInput').value.trim();
+  if (!raw) { state.depValues = []; state.depLevels = []; state.levelAssignment = {}; hideLevels(); return; }
+  const lines = raw.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) { document.getElementById('depVarInfo').textContent = 'Please include a header row and at least one data row.'; hideLevels(); return; }
+  state.depHeader = lines[0].trim();
+  state.depValues = lines.slice(1).map(l => l.trim()).filter(Boolean);
+  const uniq = [...new Set(state.depValues)];
+  state.depLevels = uniq;
+  document.getElementById('depVarInfo').textContent =
+    `✓ Header: "${state.depHeader}" · ${state.depValues.length.toLocaleString()} observations · ${uniq.length} unique level${uniq.length !== 1 ? 's' : ''}`;
+  showLevels(uniq);
+}
+
+function showLevels(levels) {
+  const sec = document.getElementById('levelsSection');
+  const grid = document.getElementById('levelsGrid');
+  grid.innerHTML = '';
+  levels.forEach(lv => {
+    if (!(lv in state.levelAssignment)) state.levelAssignment[lv] = null;
+    const div = document.createElement('div');
+    div.className = 'level-item';
+    div.innerHTML = `<span class="level-name">${escHtml(lv)}</span><div class="level-assign"><button class="level-btn ${state.levelAssignment[lv]===1?'active-1':''}" onclick="setLevel('${escAttr(lv)}',1,this)">1</button><button class="level-btn ${state.levelAssignment[lv]===0?'active-0':''}" onclick="setLevel('${escAttr(lv)}',0,this)">0</button></div>`;
+    grid.appendChild(div);
+  });
+  sec.style.display = 'block';
+}
+
+function hideLevels() { document.getElementById('levelsSection').style.display = 'none'; }
+
+function setLevel(lv, val, btn) {
+  const prev = state.levelAssignment[lv];
+  if (prev === val) { state.levelAssignment[lv] = null; btn.className = 'level-btn'; return; }
+  state.levelAssignment[lv] = val;
+  const parent = btn.parentElement;
+  parent.querySelectorAll('.level-btn').forEach(b => b.className = 'level-btn');
+  btn.className = `level-btn active-${val}`;
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s).replace(/'/g,"\\'"); }
+
+// ═══════════════════════════════════
+// INDEPENDENT VARIABLES
+// ═══════════════════════════════════
+document.getElementById('indepVarInput').addEventListener('input', parseIndepVars);
+
+function parseIndepVars() {
+  const raw = document.getElementById('indepVarInput').value.trim();
+  document.getElementById('indepVarsList').innerHTML = '';
+  document.getElementById('indepVarInfo').textContent = '';
+  document.getElementById('predictorSelect').style.display = 'none';
+  state.indepHeaders = [];
+  state.indepData = {};
+  state.varTypes = {};
+  if (!raw) return;
+
+  const lines = raw.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return;
+
+  let headers, rows;
+  if (lines[0].includes('\t')) {
+    headers = lines[0].split('\t').map(h => h.trim()).filter(Boolean);
+    rows = lines.slice(1).map(l => l.split('\t').map(c => c.trim()));
+  } else {
+    const result = Papa.parse(raw, { header: true, skipEmptyLines: true, dynamicTyping: false });
+    if (result.meta.fields && result.meta.fields.length) {
+      headers = result.meta.fields;
+      rows = result.data.map(r => headers.map(h => r[h] ?? ''));
+    } else {
+      headers = [lines[0].trim()];
+      rows = lines.slice(1).map(l => [l.trim()]);
+    }
+  }
+
+  if (!headers.length) return;
+  state.indepHeaders = headers;
+  headers.forEach((h, i) => {
+    state.indepData[h] = rows.map(r => r[i] ?? '');
+  });
+
+  detectVarTypes();
+  renderIndepVarsList();
+  renderPredictorSelect();
+
+  const numCount = Object.values(state.varTypes).filter(v => v === 'numeric').length;
+  const catCount = Object.values(state.varTypes).filter(v => v === 'categorical').length;
+  document.getElementById('indepVarInfo').textContent =
+    `✓ ${headers.length} variable(s) detected · ${rows.length.toLocaleString()} observations · ${numCount} numeric · ${catCount} categorical`;
+}
+
+function detectVarTypes() {
+  state.varTypes = {};
+  state.indepHeaders.forEach(h => {
+    const vals = (state.indepData[h] || []).filter(v => v !== '' && v !== null && v !== undefined);
+    const numCount = vals.filter(v => !isNaN(parseFloat(v)) && isFinite(v)).length;
+    state.varTypes[h] = (vals.length > 0 && numCount / vals.length > 0.8) ? 'numeric' : 'categorical';
+  });
+}
+
+function renderIndepVarsList() {
+  const list = document.getElementById('indepVarsList');
+  list.innerHTML = '';
+  state.indepHeaders.forEach(h => {
+    const vals = state.indepData[h] || [];
+    const nonEmpty = vals.filter(v => v !== '' && v !== null && v !== undefined);
+    const uniq = [...new Set(nonEmpty)];
+    const type = state.varTypes[h];
+    const div = document.createElement('div');
+    div.className = 'indep-var-row';
+    div.innerHTML = `
+      <span class="indep-var-name">${escHtml(h)}</span>
+      <span class="indep-var-meta">${vals.length.toLocaleString()} obs · ${uniq.length} unique level${uniq.length !== 1 ? 's' : ''}</span>
+      <span class="var-chip ${type}">${type === 'numeric' ? '123 Numeric' : 'ABC Categorical'}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function renderPredictorSelect() {
+  if (!state.indepHeaders.length) return;
+  const sel = document.getElementById('predictorSelect');
+  const chips = document.getElementById('predictorChips');
+  chips.innerHTML = '';
+  state.selectedPredictors = [...state.indepHeaders];
+  state.indepHeaders.forEach(h => {
+    const chip = document.createElement('div');
+    chip.className = 'pred-chip selected';
+    chip.dataset.var = h;
+    chip.textContent = h;
+    chip.onclick = () => togglePredictor(h, chip);
+    chips.appendChild(chip);
+  });
+  sel.style.display = 'block';
+}
+
+function togglePredictor(h, chip) {
+  const idx = state.selectedPredictors.indexOf(h);
+  if (idx >= 0) { state.selectedPredictors.splice(idx, 1); chip.classList.remove('selected'); }
+  else { state.selectedPredictors.push(h); chip.classList.add('selected'); }
+}
+
+// ═══════════════════════════════════
+// ERROR
+// ═══════════════════════════════════
+function showError(msg) {
+  const el = document.getElementById('globalError');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 7000);
+}
+
+// ═══════════════════════════════════════════════════════
+// ANALYSIS ENGINE
+// ═══════════════════════════════════════════════════════
+async function runAnalysis() {
+  const btn = document.getElementById('runBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  await new Promise(r => setTimeout(r, 20));
+
+  try {
+    if (!state.depValues.length) { showError('Please paste your dependent variable.'); return; }
+    const assignedLevels = Object.entries(state.levelAssignment).filter(([, v]) => v !== null);
+    if (assignedLevels.length < 2) { showError('Please assign "1" and "0" to at least two levels of your dependent variable.'); return; }
+    const has1 = assignedLevels.some(([, v]) => v === 1);
+    const has0 = assignedLevels.some(([, v]) => v === 0);
+    if (!has1 || !has0) { showError('Please assign both "1" (positive) and "0" (negative) to levels.'); return; }
+
+    const depLines = document.getElementById('depVarInput').value.trim().split(/\r?\n/).filter(l => l.trim());
+    const depVals = depLines.slice(1).map(l => l.trim()).filter(Boolean);
+    const validPairs = depVals.map((v, i) => ({ v, i }))
+      .filter(({ v }) => state.levelAssignment[v] !== null && state.levelAssignment[v] !== undefined);
+
+    const y = validPairs.map(({ v }) => state.levelAssignment[v]);
+    if (!y.length) { showError('No valid observations after level assignment.'); return; }
+
+    const pos = y.filter(v => v === 1).length;
+    const neg = y.filter(v => v === 0).length;
+    if (pos === 0 || neg === 0) { showError('Both classes (0 and 1) must have at least one observation.'); return; }
+
+    if (!state.selectedPredictors.length) { showError('Please select at least one predictor.'); return; }
+
+    const { X, colNames } = buildDesignMatrix(validPairs.map(p => p.i));
+    if (!X || X.length === 0) { showError('Could not build predictor matrix. Check your data.'); return; }
+
+    let scores;
+    if (colNames.length === 0) {
+      showError('No valid predictor columns found.'); return;
+    } else {
+      scores = fitLogisticRegression(X, y);
+    }
+
+    const roc = computeROC(y, scores, pos, neg);
+    const auc = computeAUC(roc);
+    const opt = findOptimalThreshold(roc);
+    const cm = computeConfusionMatrix(y, scores, opt.threshold);
+
+    state.results = { y, scores, roc, auc, opt, cm, n: y.length, pos, neg };
+    renderResults();
+  } catch (e) {
+    showError('Analysis error: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function buildDesignMatrix(rowIndices) {
+  const colNames = [];
+  const colArrays = [];
+
+  for (const pred of state.selectedPredictors) {
+    const rawVals = state.indepData[pred] || [];
+    const type = state.varTypes[pred];
+
+    if (type === 'numeric') {
+      const col = rowIndices.map(i => {
+        const v = parseFloat(rawVals[i]);
+        return isNaN(v) ? null : v;
+      });
+      const valid = col.filter(v => v !== null);
+      const mean = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+      colNames.push(pred);
+      colArrays.push(col.map(v => v === null ? mean : v));
+    } else {
+      const allVals = rowIndices.map(i => rawVals[i] ?? '').filter(v => v !== '');
+      const uniq = [...new Set(allVals)].sort();
+      if (uniq.length <= 1) continue;
+      for (let k = 1; k < uniq.length; k++) {
+        colNames.push(`${pred}=${uniq[k]}`);
+        colArrays.push(rowIndices.map(i => (rawVals[i] === uniq[k]) ? 1 : 0));
+      }
+    }
+  }
+
+  if (colArrays.length === 0) return { X: null, colNames: [] };
+
+  const n = rowIndices.length;
+  const X = [];
+  for (let i = 0; i < n; i++) {
+    const row = [1];
+    for (let j = 0; j < colArrays.length; j++) row.push(colArrays[j][i]);
+    X.push(row);
+  }
+  return { X, colNames };
+}
+
+function fitLogisticRegression(X, y) {
+  const n = X.length;
+  const p = X[0].length;
+  let beta = new Array(p).fill(0);
+
+  const sigmoid = z => {
+    if (z > 500) return 1;
+    if (z < -500) return 0;
+    return 1 / (1 + Math.exp(-z));
+  };
+
+  const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
+
+  for (let iter = 0; iter < 100; iter++) {
+    const pi = X.map(row => sigmoid(dot(row, beta)));
+    const grad = new Array(p).fill(0);
+    for (let i = 0; i < n; i++) {
+      const r = y[i] - pi[i];
+      for (let j = 0; j < p; j++) grad[j] += X[i][j] * r;
+    }
+    const H = [];
+    for (let j = 0; j < p; j++) H.push(new Array(p).fill(0));
+    for (let i = 0; i < n; i++) {
+      const w = pi[i] * (1 - pi[i]);
+      if (w < 1e-10) continue;
+      for (let j = 0; j < p; j++) {
+        for (let k = j; k < p; k++) {
+          const v = w * X[i][j] * X[i][k];
+          H[j][k] += v;
+          if (k !== j) H[k][j] += v;
+        }
+      }
+    }
+    for (let j = 0; j < p; j++) H[j][j] += 1e-8;
+    const delta = solveLinear(H, grad);
+    if (!delta) break;
+    let maxDelta = 0;
+    for (let j = 0; j < p; j++) {
+      beta[j] += delta[j];
+      maxDelta = Math.max(maxDelta, Math.abs(delta[j]));
+    }
+    if (maxDelta < 1e-8) break;
+  }
+
+  return X.map(row => sigmoid(dot(row, beta)));
+}
+
+function solveLinear(A, b) {
+  const n = A.length;
+  const aug = A.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < n; col++) {
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(aug[row][col]) > Math.abs(aug[maxRow][col])) maxRow = row;
+    }
+    [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+    if (Math.abs(aug[col][col]) < 1e-14) return null;
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue;
+      const factor = aug[row][col] / aug[col][col];
+      for (let k = col; k <= n; k++) aug[row][k] -= factor * aug[col][k];
+    }
+  }
+  return aug.map((row, i) => row[n] / row[i]);
+}
+
+function computeROC(y, scores, pos, neg) {
+  const uniqScores = [...new Set(scores)].sort((a, b) => b - a);
+  const points = [];
+  points.push({ threshold: Infinity, tpr: 0, fpr: 0, tp: 0, fp: 0, tn: neg, fn: pos });
+  for (const t of uniqScores) {
+    let tp = 0, fp = 0;
+    for (let i = 0; i < y.length; i++) {
+      if (scores[i] >= t) { if (y[i] === 1) tp++; else fp++; }
+    }
+    const tn = neg - fp, fn = pos - tp;
+    points.push({ threshold: t, tpr: tp / pos, fpr: fp / neg, tp, fp, tn, fn });
+  }
+  points.push({ threshold: -Infinity, tpr: 1, fpr: 1, tp: pos, fp: neg, tn: 0, fn: 0 });
+  points.sort((a, b) => a.fpr - b.fpr || a.tpr - b.tpr);
+  return points;
+}
+
+function computeAUC(roc) {
+  let auc = 0;
+  for (let i = 1; i < roc.length; i++) {
+    const dx = roc[i].fpr - roc[i - 1].fpr;
+    const avgY = (roc[i].tpr + roc[i - 1].tpr) / 2;
+    auc += dx * avgY;
+  }
+  return Math.abs(auc);
+}
+
+function findOptimalThreshold(roc) {
+  let best = null, bestJ = -Infinity;
+  for (const p of roc) {
+    if (p.threshold === Infinity || p.threshold === -Infinity) continue;
+    const j = p.tpr + (1 - p.fpr) - 1;
+    if (j > bestJ) { bestJ = j; best = p; }
+  }
+  if (!best) best = roc[Math.floor(roc.length / 2)];
+  return { ...best, youdenJ: bestJ };
+}
+
+function computeConfusionMatrix(y, scores, threshold) {
+  let tp = 0, tn = 0, fp = 0, fn = 0;
+  y.forEach((yi, i) => {
+    const pred = scores[i] >= threshold ? 1 : 0;
+    if (yi === 1 && pred === 1) tp++;
+    else if (yi === 0 && pred === 0) tn++;
+    else if (yi === 0 && pred === 1) fp++;
+    else fn++;
+  });
+  return { tp, tn, fp, fn };
+}
+
+// ═══════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════
+function renderResults() {
+  const { roc, auc, opt, cm, n } = state.results;
+
+  const aucInterp = auc >= 0.9 ? 'Outstanding' : auc >= 0.8 ? 'Excellent' : auc >= 0.7 ? 'Acceptable' : auc >= 0.6 ? 'Poor' : 'Fail';
+  const aucClass  = auc >= 0.9 ? 'outstanding' : auc >= 0.8 ? 'excellent' : auc >= 0.7 ? 'acceptable' : 'poor';
+
+  // ── ONLY AUC CARD ──
+  document.getElementById('topStats').innerHTML = `
+    <div class="stat-card red" style="max-width:320px;">
+      <div class="stat-icon">📐</div>
+      <div class="stat-label">AUC</div>
+      <div class="stat-value">${auc.toFixed(4)}</div>
+      <div class="stat-sub"><span class="auc-interp auc-${aucClass}">${aucInterp}</span></div>
+    </div>`;
+
+  renderChart(roc, auc, opt);
+
+  document.getElementById('results-section').style.display = 'block';
+  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ═══════════════════════════════════
+// CHART
+// ═══════════════════════════════════
+function renderChart(roc, auc, opt) {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const textColor = isDark ? '#b8b0a4' : '#4a4540';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const curveColor = document.getElementById('curveColor').value;
+  const refColor = document.getElementById('refColor').value;
+  const optColor = document.getElementById('optColor').value;
+  const fillColor = document.getElementById('fillColor').value;
+  const showFill = document.getElementById('showFill').checked;
+  const showAUC = document.getElementById('showAUCLabel').checked;
+  const showAUCInterp = document.getElementById('showAUCInterp').checked;
+  const showOpt = document.getElementById('showOptPoint').checked;
+  const showGrid = document.getElementById('showGrid').checked;
+  const lineWidth = parseFloat(document.getElementById('lineWidth').value);
+  const tension = parseFloat(document.getElementById('curveTension').value);
+  const titleSize = parseInt(document.getElementById('titleSize').value);
+  const axisSize = parseInt(document.getElementById('axisSize').value);
+  const chartTitle = document.getElementById('chartTitle').value;
+  const xLabel = document.getElementById('xLabel').value;
+  const yLabel = document.getElementById('yLabel').value;
+
+  const hex2rgba = (hex, alpha) => {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  };
+
+  const aucInterp = auc >= 0.9 ? 'Outstanding' : auc >= 0.8 ? 'Excellent' : auc >= 0.7 ? 'Acceptable' : auc >= 0.6 ? 'Poor' : 'Fail';
+
+  const rocData = roc.map(p => ({ x: p.fpr, y: p.tpr }));
+  const refData = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
+  const optData = showOpt ? [{ x: opt.fpr, y: opt.tpr }] : [];
+
+  if (rocChart) rocChart.destroy();
+
+  const ctx = document.getElementById('rocChart').getContext('2d');
+
+  const aucPlugin = {
+    id: 'aucLabel',
+    afterDraw(chart) {
+      if (!showAUC) return;
+      const { ctx, chartArea: { left, top } } = chart;
+      ctx.save();
+      ctx.font = `bold ${Math.max(axisSize, 12)}px DM Sans, sans-serif`;
+      ctx.fillStyle = curveColor;
+      ctx.textAlign = 'left';
+      ctx.fillText(`AUC = ${auc.toFixed(4)}`, left + 14, top + 30);
+      if (showAUCInterp) {
+        ctx.font = `${Math.max(axisSize - 2, 10)}px DM Sans, sans-serif`;
+        ctx.fillStyle = textColor;
+        ctx.fillText(`(${aucInterp})`, left + 14, top + 50);
+      }
+      ctx.restore();
+    }
+  };
+
+  rocChart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'ROC Curve',
+          data: rocData,
+          borderColor: curveColor,
+          backgroundColor: showFill ? hex2rgba(fillColor, 0.15) : 'transparent',
+          borderWidth: lineWidth,
+          pointRadius: 0,
+          tension,
+          fill: showFill ? { target: 'origin', above: hex2rgba(fillColor, 0.15) } : false,
+          showLine: true,
+          order: 1
+        },
+        {
+          label: 'Reference Line',
+          data: refData,
+          borderColor: refColor,
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          showLine: true,
+          fill: false,
+          order: 2
+        },
+        ...(optData.length ? [{
+          label: `Optimal Point (J=${opt.youdenJ.toFixed(3)})`,
+          data: optData,
+          borderColor: optColor,
+          backgroundColor: optColor,
+          pointRadius: 8,
+          pointHoverRadius: 11,
+          showLine: false,
+          order: 0
+        }] : [])
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1.3,
+      animation: { duration: 600, easing: 'easeInOutQuart' },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: { color: textColor, font: { size: axisSize, family: 'DM Sans' }, padding: 16, usePointStyle: true }
+        },
+        title: {
+          display: !!chartTitle,
+          text: chartTitle,
+          color: textColor,
+          font: { size: titleSize, family: 'DM Serif Display', weight: 'bold' },
+          padding: { bottom: 16 }
+        },
+        tooltip: {
+          backgroundColor: isDark ? '#2a2824' : '#ffffff',
+          borderColor: isDark ? '#3a3830' : '#ddd9d0',
+          borderWidth: 1,
+          titleColor: textColor,
+          bodyColor: textColor,
+          callbacks: {
+            label(ctx) {
+              if (ctx.dataset.label === 'ROC Curve') return `FPR: ${ctx.parsed.x.toFixed(3)} | TPR: ${ctx.parsed.y.toFixed(3)}`;
+              if (ctx.dataset.label && ctx.dataset.label.startsWith('Optimal')) return `Optimal · FPR: ${ctx.parsed.x.toFixed(3)} | TPR: ${ctx.parsed.y.toFixed(3)}`;
+              return '';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear', min: 0, max: 1,
+          title: { display: true, text: xLabel, color: textColor, font: { size: axisSize, family: 'DM Sans', weight: '600' } },
+          grid: { color: showGrid ? gridColor : 'transparent', drawBorder: false },
+          ticks: { color: textColor, font: { size: axisSize - 1, family: 'JetBrains Mono' } }
+        },
+        y: {
+          type: 'linear', min: 0, max: 1,
+          title: { display: true, text: yLabel, color: textColor, font: { size: axisSize, family: 'DM Sans', weight: '600' } },
+          grid: { color: showGrid ? gridColor : 'transparent', drawBorder: false },
+          ticks: { color: textColor, font: { size: axisSize - 1, family: 'JetBrains Mono' } }
+        }
+      }
+    },
+    plugins: [aucPlugin]
+  });
+}
+
+function updateChart() {
+  if (!state.results) return;
+  renderChart(state.results.roc, state.results.auc, state.results.opt);
+}
+
+// ═══════════════════════════════════
+// EXPORT PNG
+// ═══════════════════════════════════
+function exportPNG() {
+  if (!rocChart) return;
+  const canvas = document.getElementById('rocChart');
+  const scale = 3;
+  const W = canvas.width;
+  const H = canvas.height;
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = W * scale;
+  offCanvas.height = H * scale;
+  const offCtx = offCanvas.getContext('2d');
+  offCtx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#211f1c' : '#ffffff';
+  offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+  offCtx.scale(scale, scale);
+  offCtx.drawImage(canvas, 0, 0, W, H);
+  const link = document.createElement('a');
+  link.download = 'ROC_Curve_HighRes.png';
+  link.href = offCanvas.toDataURL('image/png', 1.0);
+  link.click();
+}
+
+// ═══════════════════════════════════
+// EXPORT SVG
+// ═══════════════════════════════════
+function exportSVG() {
+  if (!state.results) return;
+  const { roc, auc, opt } = state.results;
+  const W = 700, H = 560, pad = { t: 60, r: 30, b: 80, l: 80 };
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+  const curveColor = document.getElementById('curveColor').value;
+  const refColor = document.getElementById('refColor').value;
+  const optColor = document.getElementById('optColor').value;
+  const showAUC = document.getElementById('showAUCLabel').checked;
+  const showAUCInterp = document.getElementById('showAUCInterp').checked;
+  const showOpt = document.getElementById('showOptPoint').checked;
+  const lw = parseFloat(document.getElementById('lineWidth').value);
+  const title = document.getElementById('chartTitle').value;
+  const xLab = document.getElementById('xLabel').value;
+  const yLab = document.getElementById('yLabel').value;
+  const titleSz = document.getElementById('titleSize').value;
+  const axSz = document.getElementById('axisSize').value;
+
+  const aucInterp = auc >= 0.9 ? 'Outstanding' : auc >= 0.8 ? 'Excellent' : auc >= 0.7 ? 'Acceptable' : auc >= 0.6 ? 'Poor' : 'Fail';
+
+  const px = x => pad.l + x * cw;
+  const py = y => pad.t + (1 - y) * ch;
+
+  const pathD = roc.map((p, i) => `${i === 0 ? 'M' : 'L'}${px(p.fpr).toFixed(1)},${py(p.tpr).toFixed(1)}`).join(' ');
+  const fillPath = pathD + ` L${px(1).toFixed(1)},${py(0).toFixed(1)} L${px(0).toFixed(1)},${py(0).toFixed(1)} Z`;
+
+  const gridLines = [0, 0.2, 0.4, 0.6, 0.8, 1].map(v => `
+    <line x1="${px(v)}" y1="${py(0)}" x2="${px(v)}" y2="${py(1)}" stroke="#e0e0e0" stroke-width="0.5"/>
+    <line x1="${px(0)}" y1="${py(v)}" x2="${px(1)}" y2="${py(v)}" stroke="#e0e0e0" stroke-width="0.5"/>
+    <text x="${px(v)}" y="${py(0) + 18}" font-size="10" fill="#999" text-anchor="middle">${v.toFixed(1)}</text>
+    <text x="${px(0) - 12}" y="${py(v) + 4}" font-size="10" fill="#999" text-anchor="end">${v.toFixed(1)}</text>
+  `).join('');
+
+  const aucLabelSVG = showAUC
+    ? `<text x="${px(0) + 14}" y="${py(1) + 28}" font-family="Georgia,serif" font-size="${Math.max(parseInt(axSz), 12)}" fill="${curveColor}" font-weight="bold">AUC = ${auc.toFixed(4)}${showAUCInterp ? ` (${aucInterp})` : ''}</text>`
+    : '';
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="white" rx="12"/>
+  <text x="${W / 2}" y="38" font-family="Georgia,serif" font-size="${titleSz}" fill="#1a1714" text-anchor="middle" font-weight="bold">${title}</text>
+  <g>
+    ${gridLines}
+    <path d="${fillPath}" fill="${curveColor}" fill-opacity="0.12"/>
+    <path d="${pathD}" fill="none" stroke="${curveColor}" stroke-width="${lw}" stroke-linejoin="round" stroke-linecap="round"/>
+    <line x1="${px(0)}" y1="${py(0)}" x2="${px(1)}" y2="${py(1)}" stroke="${refColor}" stroke-width="1.5" stroke-dasharray="8,5"/>
+    ${showOpt ? `<circle cx="${px(opt.fpr)}" cy="${py(opt.tpr)}" r="7" fill="${optColor}" stroke="white" stroke-width="2"/>` : ''}
+    ${aucLabelSVG}
+    <text x="${px(0.5)}" y="${py(0) + 60}" font-family="Arial,sans-serif" font-size="${axSz}" fill="#4a4540" text-anchor="middle" font-weight="600">${xLab}</text>
+    <text x="${-py(0.5)}" y="${px(0) - 56}" font-family="Arial,sans-serif" font-size="${axSz}" fill="#4a4540" text-anchor="middle" font-weight="600" transform="rotate(-90)">${yLab}</text>
+    <rect x="${px(0)}" y="${py(1)}" width="${cw}" height="${ch}" fill="none" stroke="#ccc" stroke-width="1"/>
+  </g>
+  <text x="${W / 2}" y="${H - 8}" font-family="Arial,sans-serif" font-size="9" fill="#aaa" text-anchor="middle">Generated by ROC Curve Builder · Developed by Mudasir Mohammed Ibrahim</text>
+</svg>`;
+
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const link = document.createElement('a');
+  link.download = 'ROC_Curve.svg';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+// ═══════════════════════════════════
+// EXPORT WORD
+// ═══════════════════════════════════
+function exportWord() {
+  if (!state.results) return;
+  const btn = document.querySelector('.btn-export.word');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  try {
+    const { auc, opt, cm, n } = state.results;
+    const { tp, tn, fp, fn } = cm;
+    const sens = tp / (tp + fn);
+    const spec = tn / (tn + fp);
+    const acc  = (tp + tn) / n;
+    const youdenJ = sens + spec - 1;
+    const aucInterp = auc >= 0.9 ? 'Outstanding' : auc >= 0.8 ? 'Excellent' : auc >= 0.7 ? 'Acceptable' : auc >= 0.6 ? 'Poor' : 'Fail';
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; margin: 72pt; color: #1a1714; }
+  h1 { font-family: Georgia, serif; font-size: 22pt; color: #1a1714; margin-bottom: 4pt; }
+  h2 { font-family: Georgia, serif; font-size: 15pt; color: #1a3a5c; margin-top: 18pt; margin-bottom: 6pt; border-bottom: 1px solid #ddd; padding-bottom: 4pt; }
+  p { font-size: 11pt; margin-bottom: 6pt; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 14pt; }
+  th { background: #1a3a5c; color: white; padding: 8px 12px; font-weight: bold; font-size: 11pt; border: 1px solid #999; text-align: left; }
+  td { padding: 7px 12px; border: 1px solid #ccc; font-size: 11pt; }
+  td.val { font-family: "Courier New", monospace; font-weight: bold; }
+  tr:nth-child(even) td { background-color: #f8f9fa; }
+  .footer { font-size: 9pt; color: #aaa; text-align: center; margin-top: 24pt; border-top: 1px solid #ddd; padding-top: 10pt; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10pt; font-weight: bold; }
+  .badge-good { background: #d5f5e3; color: #1a6b3c; }
+  .badge-ok { background: #d6eaf8; color: #1a3a5c; }
+  .badge-warn { background: #fef9e7; color: #9a7d0a; }
+  .badge-poor { background: #fde8e6; color: #922b21; }
+</style>
+</head>
+<body>
+<h1>ROC Analysis Report</h1>
+<p><strong>Receiver Operating Characteristic Curve Analysis</strong></p>
+<p>Generated by <strong>ROC Curve Builder</strong> · Developed by <strong>Mudasir Mohammed Ibrahim</strong></p>
+<p>Date: ${dateStr}</p>
+<hr style="border:none; border-top:1px solid #ddd; margin:12pt 0;">
+
+<h2>1. AUC</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>AUC</td><td class="val">${auc.toFixed(4)}</td></tr>
+</table>
+
+<h2>2. AUC Interpretation</h2>
+<p><strong>AUC = ${auc.toFixed(4)}</strong> — This model has 
+  <span class="badge ${auc >= 0.9 ? 'badge-good' : auc >= 0.8 ? 'badge-ok' : auc >= 0.7 ? 'badge-warn' : 'badge-poor'}">${aucInterp}</span> 
+  discriminatory ability.</p>
+<table>
+  <tr><th>AUC Range</th><th>Interpretation</th></tr>
+  <tr><td>0.90 – 1.00</td><td>Outstanding</td></tr>
+  <tr><td>0.80 – 0.89</td><td>Excellent</td></tr>
+  <tr><td>0.70 – 0.79</td><td>Acceptable</td></tr>
+  <tr><td>0.60 – 0.69</td><td>Poor</td></tr>
+  <tr><td>&lt; 0.60</td><td>Fail</td></tr>
+</table>
+
+<div class="footer">
+  Generated by ROC Curve Builder · Developed by Mudasir Mohammed Ibrahim · For publication use and clinical decision support.
+</div>
+</body>
+</html>`;
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'ROC_Analysis_Report.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    alert('Word export failed: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.textContent = '📄 Export Word';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
