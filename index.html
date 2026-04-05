@@ -4,35 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ROC Curve Builder: Easily Create and Customize ROC Curves</title>
+<meta name="description" content="ROC Curve Builder lets you create and customize high-quality ROC curves for research, publications, and reports. Analyze diagnostic performance, calculate AUC, and generate clear, publication-ready visuals—no coding required.">
+
+<meta name="keywords" content="ROC curve, ROC analysis, ROC curve builder, diagnostic tools, health research, data analysis, clinical research, AUC calculation, publication-ready ROC">
+
+<meta name="google-site-verification" content="kJB32ReGicGUyIhghuPcYT3SjyxekwpWrDlm9t7NasA" />
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 :root {
-  --bg: #f5f3ef;
-  --bg2: #eceae4;
+  --bg: #ffffff;
+  --bg2: #ffffff;
+
   --surface: #ffffff;
-  --surface2: #f8f7f4;
-  --border: #ddd9d0;
-  --border2: #c8c2b6;
-  --text: #1a1714;
-  --text2: #4a4540;
-  --text3: #7a746c;
+  --surface2: #fafafa;
+
+  --border: #e6e6e6;
+  --border2: #dcdcdc;
+
+  --text: #111111;
+  --text2: #555555;
+  --text3: #888888;
+
   --accent: #c0392b;
   --accent2: #e74c3c;
-  --accent-light: #fdf2f0;
+  --accent-light: #fff5f3;
+
   --teal: #16a085;
-  --teal-light: #edfaf7;
+  --teal-light: #f2fbf9;
+
   --gold: #d4ac0d;
-  --gold-light: #fefce8;
+  --gold-light: #fffdf5;
+
   --navy: #1a3a5c;
-  --navy-light: #eef3f9;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 10px 40px rgba(0,0,0,0.10);
+  --navy-light: #f4f7fb;
+
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
+
   --radius: 12px;
   --radius-lg: 20px;
-  --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+
+  --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+
 [data-theme="dark"] {
   --bg: #0f0e0d;
   --bg2: #1a1916;
@@ -402,7 +420,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 40px; text-align: ce
 <main>
   <div class="hero">
     <div class="hero-badge">🔬 Create · Customize · Download </div>
-    <h2>Receiver Operating Characteristic<br>Analysis</h2>
+    <h2>Receiver Operating Characteristic (ROC)<br>Analysis</h2>
     <p>Create and customize beautiful ROC curves tailored for your research, publications, and reporting quickly and effortlessly.
 </p>
   </div>
